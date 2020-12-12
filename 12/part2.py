@@ -1,4 +1,4 @@
-
+import math
 
 def getInstructions(filename):
 	with open(filename, "r") as f:
@@ -29,22 +29,25 @@ def degreesToOffset(degrees):
 	else:
 		raise Exception(f"Invalid degrees '{degrees}'")
 
+def rotatePoint(x, y, angle):
+	angleRadians = math.radians(angle)
+	return round(x * math.cos(angleRadians) - y * math.sin(angleRadians)), \
+				 round(x * math.sin(angleRadians) + y * math.cos(angleRadians))
+
 if __name__ == "__main__":
-	currentDirection = 0
 	currentX, currentY = 0, 0
+	waypointX, waypointY = 10, -1
 	for instruction in getInstructions("input.txt"):
 		opcode, value = instruction
-		if opcode == "L":
-			currentDirection += value
+		if opcode == "F":
+			currentX += waypointX * value
+			currentY += waypointY * value
+		elif opcode == "L":
+			waypointX, waypointY = rotatePoint(waypointX, waypointY, -value)
 		elif opcode == "R":
-			currentDirection -= value
+			waypointX, waypointY = rotatePoint(waypointX, waypointY, value)
 		else:
-			dirX, dirY = 0, 0
-			if opcode == "F":
-				dirX, dirY = degreesToOffset(currentDirection)
-			else:
-				dirX, dirY = directionToOffset(opcode)
-			currentX += dirX * value
-			currentY += dirY * value
+			offX, offY = directionToOffset(opcode)
+			waypointX += offX * value
+			waypointY += offY * value
 	print(abs(currentX) + abs(currentY))
-
