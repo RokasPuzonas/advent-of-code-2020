@@ -1,12 +1,56 @@
 import time
+from itertools import permutations
 
-neighbourOffsets = set()
-for x in range(-1, 2):
-	for y in range(-1, 2):
-		for z in range(-1, 2):
-			neighbourOffsets.add((x, y, z))
-neighbourOffsets.remove((0, 0, 0))
+# This is really waaayy over-engineered :D
+# It's just wanted to try this out, so it would work
+# for any N dimensions
+# For this reason it is also a bit slower in general
+class ConwayCubes:
+	def __init__(self, initialState, dimensions=3):
+		self.neighbourOffsets = set(permutations((-1, 0, 1) * dimensions, dimensions))
+		self.neighbourOffsets.remove((0,) * dimensions)
 
+		self.dimensions = dimensions
+		self.state = set()
+		for cube in initialState:
+			missingDimensions = dimensions-len(cube)
+			if missingDimensions < 0: # Some dimensions need to be removed
+				self.state.add(cube[:dimensions])
+			else:
+				self.state.add(cube + (0,) * missingDimensions)
+
+	@staticmethod
+	def addTuples(t1, t2):
+		return tuple(sum(x) for x in zip(t1, t2))
+
+	def getNeighbourCount(self, cube):
+		count = 0
+		for offset in self.neighbourOffsets:
+			neighbour = ConwayCubes.addTuples(cube, offset)
+			if neighbour in self.state:
+				count += 1
+		return count
+
+	def simulateCycle(self):
+		nextState = set()
+		toBeComputedCubes = set()
+
+		for activeCube in self.state:
+			toBeComputedCubes.add(activeCube)
+			for offset in self.neighbourOffsets:
+				neighbour = ConwayCubes.addTuples(activeCube, offset)
+				toBeComputedCubes.add(neighbour)
+		
+		for cube in toBeComputedCubes:
+			neighbourCount = self.getNeighbourCount(cube)
+			if (cube in self.state and 2 <= neighbourCount <= 3) or neighbourCount == 3:
+				nextState.add(cube)
+
+		self.state = nextState
+
+	def simulateCycles(self, n=1):
+		for i in range(n):
+			self.simulateCycle()
 
 def getInitialState(filename):
 	initialState = set()
@@ -16,54 +60,9 @@ def getInitialState(filename):
 		for y in range(len(lines)):
 			for x in range(len(lines[y])):
 				if lines[y][x] == '#':
-					initialState.add((x, y, 0))
+					initialState.add((x, y))
 	
 	return initialState
-
-def getNeighbourCount(state, spot):
-	count = 0
-	for offset in neighbourOffsets:
-		neighbour = (
-			spot[0] + offset[0],
-			spot[1] + offset[1],
-			spot[2] + offset[2]
-		)
-		if neighbour in state:
-			count += 1
-	return count
-
-def isNextCubeStateActive(state, spot):
-	neighbourCount = getNeighbourCount(state, spot)
-	
-	if spot in state:
-		return neighbourCount == 3 or neighbourCount == 2
-	elif neighbourCount == 3:
-		return True
-	else:
-		return False
-
-def simulateNextState(state):
-	nextState = set()
-	computedSpots = set()
-	
-	for activeSpot in state:
-		if activeSpot not in computedSpots:
-			computedSpots.add(activeSpot)
-			if isNextCubeStateActive(state, activeSpot):
-				nextState.add(activeSpot)
-
-		for offset in neighbourOffsets:
-			neighbourSpot = (
-				activeSpot[0] + offset[0],
-				activeSpot[1] + offset[1],
-				activeSpot[2] + offset[2]
-			)
-			if neighbourSpot not in computedSpots:
-				computedSpots.add(neighbourSpot)
-				if isNextCubeStateActive(state, neighbourSpot):
-					nextState.add(neighbourSpot)
-
-	return nextState
 
 def vizualizeState(state):
 	xLayers = set(spot[0] for spot in state)
@@ -78,21 +77,20 @@ def vizualizeState(state):
 			print("".join('#' if (x, y, z) in state else '.' for x in range(xMin, xMax+1)))
 		print()
 
-def simulateCycles(initialState, count=1):
-	state = initialState
-	for _ in range(6):
-		state = simulateNextState(state)
-	return state
-
 def part1(intialState):
-	return len(simulateCycles(initialState, 6))
+	cubes = ConwayCubes(initialState, 3)
+	cubes.simulateCycles(6)
+	return len(cubes.state)
 
 def part2(intialState):
-	pass
+	cubes = ConwayCubes(initialState, 4)
+	cubes.simulateCycles(6)
+	return len(cubes.state)
 
 if __name__ == "__main__":
 	initialState = getInitialState("input.txt")
 	start = time.perf_counter()
 	print("Part 1: ", part1(initialState))
+	print("Part 2: ", part2(initialState))
 	end = time.perf_counter()
 	print("Runtime {:.3f}".format(end-start))
