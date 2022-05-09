@@ -2,7 +2,7 @@ from itertools import combinations
 
 numbers = []
 with open("input.txt") as f:
-	numbers = list(int(num) for num in f.read().split("\n"))
+	numbers = list(int(num) for num in f.read().splitlines())
 
 for i in range(25, len(numbers)):
 	possible = False

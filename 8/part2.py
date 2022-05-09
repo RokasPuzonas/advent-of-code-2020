@@ -2,7 +2,7 @@ import re
 
 lines = []
 with open("input.txt", "r") as f:
-	lines = f.read().split("\n")
+	lines = f.read().splitlines()
 
 def simulate():
 	acc = 0

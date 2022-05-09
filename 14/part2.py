@@ -1,7 +1,7 @@
 
 def getInstructions(filename):
 	with open(filename, "r") as f:
-		return list(line.split(" = ") for line in f.read().split("\n"))
+		return list(line.split(" = ") for line in f.read().splitlines())
 
 def decToBin(decimal):
 	binary = bin(decimal)[2:]

@@ -1,7 +1,7 @@
 
 initialState = []
 with open("input.txt", "r") as f:
-	initialState = f.read().split("\n")
+	initialState = f.read().splitlines()
 
 stateWidth = len(initialState[0])
 stateHeight = len(initialState)

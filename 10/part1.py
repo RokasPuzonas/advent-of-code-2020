@@ -1,7 +1,7 @@
 
 adapters = []
 with open("input.txt") as f:
-	adapters = list(int(num) for num in f.read().split("\n"))
+	adapters = list(int(num) for num in f.read().splitlines())
 
 adapters.append(0)
 adapters.sort()

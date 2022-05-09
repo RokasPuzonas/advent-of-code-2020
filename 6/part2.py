@@ -7,6 +7,17 @@ possibleAnswers = "qwertyuiopasdfghjklzxcvbnm"
 
 totalGroupYesCount = 0
 for answerGroup in answerGroups:
-	for possibleAnswer in possibleAnswers:
-		totalGroupYesCount += all(answer.find(possibleAnswer) > -1 for answer in answerGroup)
+    if answerGroup[-1] == "":
+        answerGroup.pop()
+
+    answersCounter = {}
+    for answers in answerGroup:
+        for letter in answers:
+            if letter not in answersCounter:
+                answersCounter[letter] = 0
+            answersCounter[letter] += 1
+
+    for count in answersCounter.values():
+        if count == len(answerGroup):
+            totalGroupYesCount += 1
 print(totalGroupYesCount)

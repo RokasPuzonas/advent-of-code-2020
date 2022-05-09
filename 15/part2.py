@@ -5,20 +5,24 @@ def getStartingNumbers(filename):
 		return [int(n) for n in f.read().split(",")]
 
 numbers = getStartingNumbers("input.txt")
-occurences = {n: [i] for i,n in enumerate(numbers)}
+positions = {n: i for i,n in enumerate(numbers)}
+diff = {n: 0 for n in numbers}
+
 lastNumber = numbers[-1]
 #         30000000
 targetI = 30000000
+
 i = len(numbers)-1
 while i+1 < targetI:
-	if len(occurences[lastNumber]) > 1:
-		number = occurences[lastNumber][-1] - occurences[lastNumber][-2]
-	else:
-		number = 0
-	i += 1
-	occurences[number] = occurences.get(number, [])
-	occurences[number].append(i)
-	occurences[number] = occurences[number][-2:]
-	lastNumber = number
+    number = -1
+    if lastNumber in diff:
+        number = diff[lastNumber]
+    else:
+        number = 0
+    i += 1
+    if number in positions:
+        diff[number] = i - positions[number]
+    positions[number] = i
+    lastNumber = number
 
 print(lastNumber)

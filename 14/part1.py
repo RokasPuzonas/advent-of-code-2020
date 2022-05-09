@@ -2,7 +2,7 @@
 
 def getInstructions(filename):
 	with open(filename, "r") as f:
-		return list(line.split(" = ") for line in f.read().split("\n"))
+		return list(line.split(" = ") for line in f.read().splitlines())
 
 def applyMask(value, mask):
 	return (value | int(mask.replace("X", "0"), 2)) & int(mask.replace("X", "1"), 2)
