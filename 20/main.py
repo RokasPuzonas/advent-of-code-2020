@@ -9,6 +9,8 @@ class Tile:
     right: str
     bottom: str
 
+    inner: list[str]
+
     def __repr__(self) -> str:
         return "Tile"
 
@@ -22,7 +24,10 @@ def parse_tile(tile_data: str) -> tuple[int, Tile]:
     right_edge = "".join(line[-1] for line in lines[1:])
     left_edge = "".join(line[0] for line in lines[1:])
     bottom_edge = lines[-1]
-    return id, Tile(top_edge, left_edge, right_edge, bottom_edge)
+
+    raw_inner = list(line[1:-1] for line in lines[2:-1])
+
+    return id, Tile(top_edge, left_edge, right_edge, bottom_edge, raw_inner)
 
 def parse_input(filename: str) -> TilesData:
     tiles = {}
@@ -33,12 +38,20 @@ def parse_input(filename: str) -> TilesData:
             tiles[id] = tile
     return tiles
 
+def flip_image(image: list[str]):
+    return image[::-1]
+
+def rotate_image(image: list[str]):
+    return ["".join(col[::-1]) for col in zip(*image)]
+
 def rotate_tile(tile) -> Tile:
     return Tile(
         top = tile.left[::-1],
         right = tile.top,
         bottom = tile.right[::-1],
-        left = tile.bottom
+        left = tile.bottom,
+
+        inner=rotate_image(tile.inner)
     )
 
 def flip_tile(tile) -> Tile:
@@ -46,7 +59,9 @@ def flip_tile(tile) -> Tile:
         top = tile.bottom,
         right = tile.right[::-1],
         bottom = tile.top,
-        left = tile.left[::-1]
+        left = tile.left[::-1],
+
+        inner=tile.inner[::-1]
     )
 
 def get_grid_size(tiles: TilesData) -> int:
@@ -68,6 +83,25 @@ def get_tile_variants(tile: Tile) -> Iterator[Tile]:
     tile = flip_tile(tile)
     for t in get_rotated_tiles(tile):
         yield t
+
+def get_image_variants(image: list[str]) -> Iterator[list[str]]:
+    yield image
+    image = rotate_image(image)
+    yield image
+    image = rotate_image(image)
+    yield image
+    image = rotate_image(image)
+    yield image
+    image = rotate_image(image)
+
+    image = flip_image(image)
+    yield image
+    image = rotate_image(image)
+    yield image
+    image = rotate_image(image)
+    yield image
+    image = rotate_image(image)
+    yield image
 
 def is_tile_possible(grid: TileGrid, x: int, y: int, tile: Tile) -> bool:
     if x > 0:
@@ -105,7 +139,7 @@ def get_possible_tiles(
                 if is_tile_possible(grid, x, y, variant):
                     yield id, variant
 
-def solve(tiles_data: TilesData, grid: TileGrid, used_tiles: list[int]=[]) -> bool:
+def solve(tiles_data: TilesData, grid: TileGrid, used_tiles: list[int] = []) -> bool:
     for y in range(len(grid)):
         for x in range(len(grid[0])):
             if grid[y][x] == None:
@@ -133,8 +167,8 @@ def multiply_corners(grid: TileGrid) -> int:
     assert bottom_right
     return top_left[0] * top_right[0] * bottom_right[0] * bottom_left[0]
 
-def part1(tiles: TilesData) -> int:
-    width = get_grid_size(tiles)
+def solve_grid(tiles_data: TilesData) -> TileGrid:
+    width = get_grid_size(tiles_data)
 
     grid: TileGrid = []
     for _ in range(width):
@@ -142,8 +176,63 @@ def part1(tiles: TilesData) -> int:
 
     solve(tiles, grid)
 
-    return multiply_corners(grid)
+    return grid
+
+def get_full_image(grid: TileGrid) -> list[str]:
+    rows = []
+    for y in range(len(grid)):
+        row = []
+        for x in range(len(grid[0])):
+            cell = grid[y][x]
+            assert cell
+            inner = cell[1].inner
+            if x == 0:
+                row = inner.copy()
+            else:
+                for i in range(len(inner)):
+                    row[i] += inner[i]
+        rows.extend(row)
+
+    return rows
+
+def is_sea_monster(image: list[str], sea_monster: list[str], x: int, y: int) -> bool:
+    for oy in range(len(sea_monster)):
+        for ox in range(len(sea_monster[0])):
+            if sea_monster[oy][ox] == "#" and image[y+oy][x+ox] != "#":
+                return False
+    return True
+
+def count_symbol(image: list[str], symbol: str) -> int:
+    return sum(sum(c == symbol for c in row) for row in image)
+
+def count_sea_monsters(image: list[str], sea_monster: list[str]) -> int:
+    monsters = 0
+
+    for y in range(len(image)-len(sea_monster)+1):
+        for x in range(len(image[0])-len(sea_monster[0])+1):
+            if is_sea_monster(image, sea_monster, x, y):
+                monsters += 1
+
+    return monsters
+
+def part2(grid: TileGrid) -> int:
+    image = get_full_image(grid)
+    sea_monster = [
+        "                  # ",
+        "#    ##    ##    ###",
+        " #  #  #  #  #  #   "
+    ]
+
+    max_monsters = 0
+    for variant in get_image_variants(sea_monster):
+        monsters = count_sea_monsters(image, variant)
+        max_monsters = max(max_monsters, monsters)
+
+    return count_symbol(image, "#") - count_symbol(sea_monster, "#") * max_monsters
 
 if __name__ == "__main__":
     tiles = parse_input("input.txt")
-    print("part1: ", part1(tiles))
+    grid = solve_grid(tiles)
+
+    print("part1: ", multiply_corners(grid))
+    print("part2: ", part2(grid))
